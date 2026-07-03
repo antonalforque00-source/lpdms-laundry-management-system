@@ -110,12 +110,15 @@ export function LoginScreen() {
           </div>
         </form>
 
-        <div className="hidden sm:flex flex-col items-center mt-12 opacity-50 hover:opacity-100 transition-opacity">
+        <div className="hidden sm:flex flex-col items-center mt-12 opacity-50 hover:opacity-100 transition-opacity text-center">
           <div className="bg-white p-2 rounded-xl shadow-sm mb-3">
             <QRCode value={typeof window !== 'undefined' ? window.location.href : 'https://ais-dev-vvasvr54odt6errmbdysl2-609173610732.asia-southeast1.run.app/'} size={80} level="L" />
           </div>
-          <p className="text-[10px] uppercase font-bold tracking-widest text-gray-500 flex items-center gap-1.5 bg-white/50 px-3 py-1.5 rounded-full">
-            <Smartphone size={12} /> Scan to view on mobile
+          <p className="text-[10px] uppercase font-bold tracking-widest text-gray-500 flex items-center gap-1.5 bg-white/50 px-3 py-1.5 rounded-full mb-1">
+            <Smartphone size={12} /> Scan with phone camera
+          </p>
+          <p className="text-[9px] uppercase font-bold tracking-widest text-red-400 bg-white/50 px-3 py-1 rounded-full">
+            (Do not use Expo Go)
           </p>
         </div>
       </motion.div>

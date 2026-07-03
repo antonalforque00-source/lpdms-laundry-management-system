@@ -24,13 +24,66 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [orders, setOrders] = useState<Order[]>(mockOrders);
   const [inventory, setInventory] = useState<InventoryItem[]>(mockInventory);
 
+  const isSupabaseEnabled = import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_URL !== 'your_supabase_project_url_here';
+
+  // Fetch initial data
+  const fetchData = async () => {
+    if (!isSupabaseEnabled) return;
+    
+    try {
+      const { supabase } = await import('../lib/supabase');
+      
+      const [usersRes, ordersRes, inventoryRes] = await Promise.all([
+        supabase.from('users').select('*'),
+        supabase.from('orders').select('*'),
+        supabase.from('inventory').select('*')
+      ]);
+
+      if (usersRes.data) {
+        setUsers(usersRes.data as User[]);
+      }
+      
+      if (ordersRes.data) {
+        // Map from snake_case to camelCase
+        const mappedOrders = ordersRes.data.map(o => ({
+          ...o,
+          customerId: o.customer_id,
+          customerName: o.customer_name,
+          riderId: o.rider_id,
+          staffId: o.staff_id,
+          totalCost: o.total_cost,
+          paymentMethod: o.payment_method,
+          isPaid: o.is_paid,
+          pickupTime: o.pickup_time,
+          deliveryTimeForecast: o.delivery_time_forecast,
+          pickupAddress: o.pickup_address,
+          deliveryAddress: o.delivery_address,
+          qrCode: o.qr_code,
+          createdAt: o.created_at,
+          updatedAt: o.updated_at
+        })) as Order[];
+        setOrders(mappedOrders);
+      }
+      
+      if (inventoryRes.data) {
+        const mappedInventory = inventoryRes.data.map(i => ({
+          ...i,
+          lowStockThreshold: i.low_stock_threshold
+        })) as InventoryItem[];
+        setInventory(mappedInventory);
+      }
+    } catch (err) {
+      console.error('Error fetching data from Supabase:', err);
+    }
+  };
+
   useEffect(() => {
-    if (import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_URL !== 'your_supabase_project_url_here') {
+    if (isSupabaseEnabled) {
       import('../lib/supabase').then(({ supabase }) => {
         // Get initial session
         supabase.auth.getSession().then(({ data: { session } }) => {
           if (session?.user) {
-            supabase.from('profiles').select('*').eq('id', session.user.id).single()
+            supabase.from('users').select('*').eq('id', session.user.id).single()
               .then(({ data }) => {
                 if (data) setCurrentUser(data as User);
               });
@@ -40,7 +93,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         // Listen for auth changes
         supabase.auth.onAuthStateChange((_event, session) => {
           if (session?.user) {
-             supabase.from('profiles').select('*').eq('id', session.user.id).single()
+             supabase.from('users').select('*').eq('id', session.user.id).single()
                .then(({ data }) => {
                  if (data) setCurrentUser(data as User);
                });
@@ -49,11 +102,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           }
         });
       }).catch(console.error);
+
+      fetchData();
     }
   }, []);
 
   const login = async (email: string, password?: string) => {
-    if (import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_URL !== 'your_supabase_project_url_here') {
+    if (isSupabaseEnabled) {
       try {
         const { supabase } = await import('../lib/supabase');
         const { data, error } = await supabase.auth.signInWithPassword({ 
@@ -63,9 +118,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         if (error) throw new Error(error.message);
         
         if (data.user) {
-          const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user.id).single();
+          const { data: profile } = await supabase.from('users').select('*').eq('id', data.user.id).single();
           if (profile) {
             setCurrentUser(profile as User);
+            await fetchData();
             return;
           }
         }
@@ -84,7 +140,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = async () => {
-    if (import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_URL !== 'your_supabase_project_url_here') {
+    if (isSupabaseEnabled) {
       try {
         const { supabase } = await import('../lib/supabase');
         await supabase.auth.signOut();
@@ -95,15 +151,40 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setCurrentUser(null);
   };
 
-  const updateOrderStatus = (orderId: string, status: Order['status']) => {
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status, updatedAt: new Date().toISOString() } : o));
+  const updateOrderStatus = async (orderId: string, status: Order['status']) => {
+    const updatedAt = new Date().toISOString();
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status, updatedAt } : o));
+    
+    if (isSupabaseEnabled) {
+      const { supabase } = await import('../lib/supabase');
+      await supabase.from('orders').update({ 
+        status, 
+        updated_at: updatedAt 
+      }).eq('id', orderId);
+    }
   };
 
-  const assignRider = (orderId: string, riderId: string) => {
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, riderId, status: o.status === 'Pending' ? 'Rider Assigned for Pickup' : 'Rider Assigned for Delivery' } : o));
+  const assignRider = async (orderId: string, riderId: string) => {
+    setOrders(prev => prev.map(o => {
+      if (o.id !== orderId) return o;
+      const newStatus = o.status === 'Pending' ? 'Rider Assigned for Pickup' : 'Rider Assigned for Delivery';
+      const updatedAt = new Date().toISOString();
+      
+      if (isSupabaseEnabled) {
+        import('../lib/supabase').then(({ supabase }) => {
+          supabase.from('orders').update({ 
+            rider_id: riderId, 
+            status: newStatus,
+            updated_at: updatedAt
+          }).eq('id', orderId);
+        });
+      }
+      
+      return { ...o, riderId, status: newStatus, updatedAt };
+    }));
   };
 
-  const createOrder = (order: Partial<Order>) => {
+  const createOrder = async (order: Partial<Order>) => {
     const newOrder: Order = {
       id: `ORD-${Math.floor(Math.random() * 10000)}`,
       status: 'Pending',
@@ -112,15 +193,53 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       qrCode: `QR-${Math.floor(Math.random() * 100000)}`,
       ...order
     } as Order;
+    
+    if (isSupabaseEnabled && currentUser) {
+      const { supabase } = await import('../lib/supabase');
+      
+      const orderData = {
+        customer_id: currentUser.id,
+        customer_name: order.customerName,
+        status: newOrder.status,
+        services: order.services,
+        instructions: order.instructions,
+        weight: order.weight,
+        total_cost: order.totalCost,
+        payment_method: order.paymentMethod,
+        is_paid: order.isPaid,
+        pickup_time: order.pickupTime,
+        pickup_address: order.pickupAddress,
+        delivery_address: order.deliveryAddress,
+        qr_code: newOrder.qrCode,
+      };
+      
+      const { data, error } = await supabase.from('orders').insert([orderData]).select().single();
+      if (!error && data) {
+        newOrder.id = data.id;
+        newOrder.createdAt = data.created_at;
+        newOrder.updatedAt = data.updated_at;
+      } else {
+        console.error('Error creating order in Supabase:', error);
+      }
+    }
+    
     setOrders(prev => [newOrder, ...prev]);
   };
 
-  const updateInventory = (id: string, qty: number) => {
+  const updateInventory = async (id: string, qty: number) => {
     setInventory(prev => prev.map(i => i.id === id ? { ...i, quantity: qty } : i));
+    
+    if (isSupabaseEnabled) {
+      const { supabase } = await import('../lib/supabase');
+      await supabase.from('inventory').update({ 
+        quantity: qty,
+        last_updated: new Date().toISOString()
+      }).eq('id', id);
+    }
   };
 
   const register = async (user: Omit<User, 'id'>, password?: string) => {
-    if (import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_URL !== 'your_supabase_project_url_here') {
+    if (isSupabaseEnabled) {
       try {
         const { supabase } = await import('../lib/supabase');
         const { data, error } = await supabase.auth.signUp({
@@ -138,10 +257,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             points: 0
           };
           
-          const { error: profileError } = await supabase.from('profiles').insert([newUser]);
+          const { error: profileError } = await supabase.from('users').insert([newUser]);
           if (profileError) throw new Error(profileError.message);
           
           setCurrentUser(newUser as User);
+          await fetchData();
           return;
         }
       } catch (err: any) {
