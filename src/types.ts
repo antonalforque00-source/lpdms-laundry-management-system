@@ -1,10 +1,13 @@
 export type Role = 'customer' | 'rider' | 'staff' | 'admin';
 
+export type UserStatus = 'pending' | 'approved' | 'rejected';
+
 export interface User {
   id: string;
   name: string;
   email: string;
   role: Role;
+  status?: UserStatus;
   points?: number;
 }
 
@@ -23,6 +26,11 @@ export type OrderStatus =
   | 'Out for Delivery'
   | 'Delivered';
 
+export interface OrderItem {
+  name: string;
+  quantity: number;
+}
+
 export interface Order {
   id: string;
   customerId: string;
@@ -32,6 +40,7 @@ export interface Order {
   pickupTime: string;
   deliveryTimeForecast?: string;
   services: string[];
+  items?: OrderItem[];
   instructions?: string;
   status: OrderStatus;
   totalCost: number;

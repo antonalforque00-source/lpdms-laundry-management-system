@@ -14,6 +14,7 @@ interface AppContextType {
   assignRider: (orderId: string, riderId: string) => void;
   createOrder: (order: Partial<Order>) => void;
   updateInventory: (id: string, qty: number) => void;
+  updateUserStatus: (userId: string, status: User['status']) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -120,6 +121,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         if (data.user) {
           const { data: profile } = await supabase.from('users').select('*').eq('id', data.user.id).single();
           if (profile) {
+            if (profile.status === 'pending') {
+              await supabase.auth.signOut();
+              throw new Error('Your account is pending admin approval.');
+            }
+            if (profile.status === 'rejected') {
+              await supabase.auth.signOut();
+              throw new Error('Your account registration was rejected.');
+            }
             setCurrentUser(profile as User);
             await fetchData();
             return;
@@ -133,6 +142,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     // Fallback to mock data if Supabase isn't configured
     const user = users.find(u => u.email === email);
     if (user) {
+      if (user.status === 'pending') throw new Error('Your account is pending admin approval.');
+      if (user.status === 'rejected') throw new Error('Your account registration was rejected.');
       setCurrentUser(user);
     } else {
       throw new Error('User not found in mock data. Try customer@test.com, rider@test.com, staff@test.com, admin@test.com');
@@ -202,6 +213,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         customer_name: order.customerName,
         status: newOrder.status,
         services: order.services,
+        items: order.items || [],
         instructions: order.instructions,
         weight: order.weight,
         total_cost: order.totalCost,
@@ -238,6 +250,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const updateUserStatus = async (userId: string, status: User['status']) => {
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, status } : u));
+    if (isSupabaseEnabled) {
+      const { supabase } = await import('../lib/supabase');
+      await supabase.from('users').update({ status }).eq('id', userId);
+    }
+  };
+
   const register = async (user: Omit<User, 'id'>, password?: string) => {
     if (isSupabaseEnabled) {
       try {
@@ -254,14 +274,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             email: user.email,
             name: user.name,
             role: user.role,
+            status: 'pending' as User['status'],
             points: 0
           };
           
           const { error: profileError } = await supabase.from('users').insert([newUser]);
           if (profileError) throw new Error(profileError.message);
           
-          setCurrentUser(newUser as User);
-          await fetchData();
+          await supabase.auth.signOut(); // Sign out since they are pending
           return;
         }
       } catch (err: any) {
@@ -273,14 +293,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const newUser: User = {
       ...user,
       id: `u${Math.floor(Math.random() * 10000)}`,
+      status: 'pending',
       points: 0
     };
     setUsers(prev => [...prev, newUser]);
-    setCurrentUser(newUser);
+    return;
   };
 
   return (
-    <AppContext.Provider value={{ currentUser, login, register, logout, users, orders, inventory, updateOrderStatus, assignRider, createOrder, updateInventory }}>
+    <AppContext.Provider value={{ currentUser, login, register, logout, users, orders, inventory, updateOrderStatus, assignRider, createOrder, updateInventory, updateUserStatus }}>
       {children}
     </AppContext.Provider>
   );

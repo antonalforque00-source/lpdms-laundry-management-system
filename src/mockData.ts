@@ -2,10 +2,10 @@ import { User, Order, InventoryItem } from './types';
 import { addDays, subDays } from 'date-fns';
 
 export const mockUsers: User[] = [
-  { id: 'u1', name: 'Alice Customer', email: 'customer@test.com', role: 'customer', points: 150 },
-  { id: 'u2', name: 'Bob Rider', email: 'rider@test.com', role: 'rider' },
-  { id: 'u3', name: 'Charlie Staff', email: 'staff@test.com', role: 'staff' },
-  { id: 'u4', name: 'Diana Admin', email: 'admin@test.com', role: 'admin' },
+  { id: 'u1', name: 'Alice Customer', email: 'customer@test.com', role: 'customer', points: 150, status: 'approved' },
+  { id: 'u2', name: 'Bob Rider', email: 'rider@test.com', role: 'rider', status: 'approved' },
+  { id: 'u3', name: 'Charlie Staff', email: 'staff@test.com', role: 'staff', status: 'approved' },
+  { id: 'u4', name: 'Diana Admin', email: 'admin@test.com', role: 'admin', status: 'approved' },
 ];
 
 export const mockOrders: Order[] = [

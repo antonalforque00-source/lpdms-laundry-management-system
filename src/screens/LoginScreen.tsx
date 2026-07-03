@@ -15,14 +15,18 @@ export function LoginScreen() {
   const [role, setRole] = useState<'customer' | 'rider' | 'staff' | 'admin'>('customer');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setSuccessMsg(null);
     try {
       if (isRegistering) {
         await register({ email, name, role }, password);
+        setIsRegistering(false);
+        setSuccessMsg('Registration successful! Please wait for admin approval to log in.');
       } else {
         await login(email, password);
       }
@@ -49,6 +53,11 @@ export function LoginScreen() {
         </div>
 
         <form onSubmit={handleSubmit} className="w-full space-y-5 bg-white p-6 rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100">
+          {successMsg && (
+            <div className="p-3 bg-green-50 border border-green-100 text-green-700 text-sm rounded-xl text-center font-medium">
+              {successMsg}
+            </div>
+          )}
           {error && (
             <div className="p-3 bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl text-center font-medium">
               {error}

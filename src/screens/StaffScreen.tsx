@@ -62,6 +62,26 @@ export function StaffScreen() {
                     {order.weight ? `${order.weight} kg` : 'Weight not set'}
                   </div>
                   
+                  {order.items && order.items.length > 0 && (
+                    <div className="mt-3 bg-gray-50 p-2 rounded-lg border border-gray-100">
+                      <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Items to Process:</p>
+                      <ul className="text-sm text-gray-700 space-y-1">
+                        {order.items.map((item, idx) => (
+                          <li key={idx} className="flex justify-between border-b border-gray-200 border-dashed pb-1 last:border-0 last:pb-0">
+                            <span>{item.name}</span>
+                            <span className="font-medium">x{item.quantity}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {order.instructions && (
+                    <div className="mt-2 text-xs text-orange-700 bg-orange-50 p-2 rounded-md border border-orange-100">
+                      <strong>Instructions:</strong> {order.instructions}
+                    </div>
+                  )}
+                  
                   <div className="mt-4 flex gap-2">
                     {order.status === 'Arrived at Facility' && (
                        <Button variant="outline" size="sm" className="flex-1">Set Weight</Button>

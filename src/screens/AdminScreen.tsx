@@ -16,10 +16,11 @@ const data = [
 ];
 
 export function AdminScreen() {
-  const { orders, users } = useAppContext();
+  const { orders, users, updateUserStatus, assignRider } = useAppContext();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'orders' | 'users'>('dashboard');
 
   const totalRevenue = orders.reduce((sum, o) => sum + o.totalCost, 0);
+  const riders = users.filter(u => u.role === 'rider' && u.status === 'approved');
 
   return (
     <div className="flex flex-col h-full bg-[#F9FAFB]">
@@ -104,6 +105,31 @@ export function AdminScreen() {
                   </div>
                   <p className="text-sm text-gray-600">{order.customerName}</p>
                   <p className="text-xs text-gray-500">{order.services.join(', ')} • ₱{order.totalCost}</p>
+
+                  {(order.status === 'Pending' || order.status === 'Ready for Delivery') && (
+                    <div className="mt-4 pt-3 border-t border-gray-100 flex items-center gap-2">
+                      <span className="text-xs font-bold text-gray-500 uppercase">Assign Rider:</span>
+                      <select 
+                        className="flex-1 h-8 rounded-lg border border-gray-200 text-xs px-2"
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            assignRider(order.id, e.target.value);
+                          }
+                        }}
+                        defaultValue=""
+                      >
+                        <option value="" disabled>Select a Rider...</option>
+                        {riders.map(r => (
+                          <option key={r.id} value={r.id}>{r.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  {order.riderId && (order.status !== 'Pending' && order.status !== 'Ready for Delivery') && (
+                    <p className="mt-2 text-xs text-gray-500">
+                      Rider: <strong>{users.find(u => u.id === order.riderId)?.name || 'Unknown'}</strong>
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             ))}
@@ -123,6 +149,33 @@ export function AdminScreen() {
                       <p className="text-sm font-medium text-gray-900">{u.name}</p>
                       <p className="text-xs text-gray-500 capitalize">{u.role}</p>
                     </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    {u.status === 'pending' ? (
+                      <>
+                        <button 
+                          onClick={() => updateUserStatus(u.id, 'approved')}
+                          className="px-3 py-1 bg-green-500 text-white rounded-lg text-xs font-bold hover:bg-green-600 transition-colors"
+                        >
+                          Approve
+                        </button>
+                        <button 
+                          onClick={() => updateUserStatus(u.id, 'rejected')}
+                          className="px-3 py-1 bg-red-100 text-red-600 rounded-lg text-xs font-bold hover:bg-red-200 transition-colors"
+                        >
+                          Reject
+                        </button>
+                      </>
+                    ) : (
+                      <span className={`text-xs font-bold px-2 py-1 rounded-full uppercase tracking-wider ${
+                        u.status === 'approved' ? 'bg-green-100 text-green-700' :
+                        u.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {u.status || 'Active'}
+                      </span>
+                    )}
                   </div>
                 </CardContent>
               </Card>

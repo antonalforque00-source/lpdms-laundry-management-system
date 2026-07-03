@@ -183,6 +183,22 @@ function ScheduleForm({ onComplete }: { onComplete: () => void }) {
   const [service, setService] = useState('Wash and Fold');
   const [address, setAddress] = useState('123 Main St, Apt 4B');
   const [payment, setPayment] = useState<'COD' | 'GCash' | 'Maya' | 'Credit/Debit'>('GCash');
+  const [items, setItems] = useState<{name: string, quantity: number}[]>([]);
+  const [newItemName, setNewItemName] = useState('');
+  const [newItemQty, setNewItemQty] = useState(1);
+  const [instructions, setInstructions] = useState('');
+
+  const handleAddItem = () => {
+    if (newItemName.trim()) {
+      setItems([...items, { name: newItemName.trim(), quantity: newItemQty }]);
+      setNewItemName('');
+      setNewItemQty(1);
+    }
+  };
+
+  const removeItem = (index: number) => {
+    setItems(items.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -196,6 +212,8 @@ function ScheduleForm({ onComplete }: { onComplete: () => void }) {
       paymentMethod: payment,
       totalCost: service === 'Dry Cleaning' ? 350 : (service === 'Wash and Fold' ? 150 : (service === 'Wash and Dry' ? 200 : 180)),
       isPaid: false,
+      items: items,
+      instructions: instructions
     });
     alert('Pickup Scheduled! AI forecasting delivery time...');
     onComplete();
@@ -217,6 +235,43 @@ function ScheduleForm({ onComplete }: { onComplete: () => void }) {
         
         <Input label="Pickup Address" value={address} onChange={e => setAddress(e.target.value)} required />
         
+        <div className="space-y-2 p-3 bg-white border border-gray-100 shadow-sm rounded-xl">
+          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Items to Wash (Optional)</label>
+          {items.map((item, idx) => (
+            <div key={idx} className="flex justify-between items-center text-sm bg-gray-50 p-2 rounded-lg mb-2">
+              <span>{item.quantity}x {item.name}</span>
+              <button type="button" onClick={() => removeItem(idx)} className="text-red-500 font-bold hover:text-red-700">
+                <X size={14} />
+              </button>
+            </div>
+          ))}
+          <div className="flex gap-2">
+            <input 
+              type="text" 
+              placeholder="e.g. T-Shirt" 
+              className="flex-1 h-9 rounded-lg border border-gray-200 px-3 text-sm"
+              value={newItemName}
+              onChange={e => setNewItemName(e.target.value)}
+            />
+            <input 
+              type="number" 
+              min="1"
+              className="w-16 h-9 rounded-lg border border-gray-200 px-2 text-sm text-center"
+              value={newItemQty}
+              onChange={e => setNewItemQty(Number(e.target.value))}
+            />
+            <button 
+              type="button" 
+              onClick={handleAddItem}
+              className="px-3 bg-blue-100 text-blue-700 rounded-lg text-sm font-bold hover:bg-blue-200"
+            >
+              Add
+            </button>
+          </div>
+        </div>
+
+        <Input label="Special Instructions (Optional)" value={instructions} onChange={e => setInstructions(e.target.value)} />
+
         <div className="space-y-2">
           <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Payment Method</label>
           <select className="flex h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-blue-500 transition-all font-medium text-gray-800" value={payment} onChange={e => setPayment(e.target.value as any)}>

@@ -6,6 +6,7 @@ CREATE TABLE public.users (
   email TEXT NOT NULL,
   name TEXT NOT NULL,
   role TEXT NOT NULL CHECK (role IN ('customer', 'rider', 'staff', 'admin')),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
   points INTEGER DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
@@ -19,6 +20,7 @@ CREATE TABLE public.orders (
   staff_id UUID REFERENCES public.users(id),
   status TEXT NOT NULL,
   services JSONB NOT NULL DEFAULT '[]'::jsonb,
+  items JSONB DEFAULT '[]'::jsonb,
   instructions TEXT,
   weight NUMERIC,
   total_cost NUMERIC NOT NULL,
