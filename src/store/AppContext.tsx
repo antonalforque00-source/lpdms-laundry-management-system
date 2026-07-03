@@ -83,7 +83,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    if (import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_URL !== 'your_supabase_project_url_here') {
+      try {
+        const { supabase } = await import('../lib/supabase');
+        await supabase.auth.signOut();
+      } catch (err) {
+        console.error('Logout error:', err);
+      }
+    }
     setCurrentUser(null);
   };
 

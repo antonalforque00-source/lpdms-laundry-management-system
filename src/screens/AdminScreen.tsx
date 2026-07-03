@@ -43,7 +43,7 @@ export function AdminScreen() {
                 <CardContent className="p-5">
                   <DollarSign className="w-6 h-6 text-green-500 mb-2" />
                   <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1">Revenue</p>
-                  <p className="text-2xl font-bold tracking-tight text-gray-800">${totalRevenue.toFixed(2)}</p>
+                  <p className="text-2xl font-bold tracking-tight text-gray-800">₱{totalRevenue.toFixed(2)}</p>
                 </CardContent>
               </Card>
               <Card>
@@ -103,7 +103,7 @@ export function AdminScreen() {
                     <StatusBadge status={order.status} />
                   </div>
                   <p className="text-sm text-gray-600">{order.customerName}</p>
-                  <p className="text-xs text-gray-500">{order.services.join(', ')} • ${order.totalCost}</p>
+                  <p className="text-xs text-gray-500">{order.services.join(', ')} • ₱{order.totalCost}</p>
                 </CardContent>
               </Card>
             ))}

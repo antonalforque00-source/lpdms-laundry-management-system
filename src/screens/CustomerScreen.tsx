@@ -9,7 +9,7 @@ import { Plus, Package, Clock, MapPin, Award, CheckCircle2, QrCode, X } from 'lu
 import { format } from 'date-fns';
 
 export function CustomerScreen() {
-  const { currentUser, orders, createOrder } = useAppContext();
+  const { currentUser, orders, createOrder, logout } = useAppContext();
   const [activeTab, setActiveTab] = useState<'home' | 'schedule' | 'profile'>('home');
   const [selectedQr, setSelectedQr] = useState<string | null>(null);
   
@@ -93,7 +93,7 @@ export function CustomerScreen() {
                         )}
                       </div>
                       <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
-                         <span className="text-sm font-semibold">${order.totalCost.toFixed(2)}</span>
+                         <span className="text-sm font-semibold">₱{order.totalCost.toFixed(2)}</span>
                          <Button 
                             variant="ghost" 
                             size="sm" 
@@ -116,8 +116,40 @@ export function CustomerScreen() {
         )}
 
         {activeTab === 'profile' && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900">Past Orders</h2>
+          <div className="space-y-6">
+            <h2 className="text-lg font-semibold text-gray-900">My Profile</h2>
+            <Card>
+              <CardContent className="p-6 flex flex-col items-center">
+                <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                  <span className="text-3xl font-bold text-blue-600">
+                    {currentUser?.name?.charAt(0) || 'U'}
+                  </span>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900">{currentUser?.name}</h3>
+                <p className="text-sm text-gray-500 mb-6">{currentUser?.email}</p>
+                <div className="w-full space-y-3">
+                  <div className="flex justify-between p-3 bg-gray-50 rounded-xl">
+                    <span className="text-gray-600 font-medium">Role</span>
+                    <span className="text-gray-900 font-semibold capitalize">{currentUser?.role}</span>
+                  </div>
+                  <div className="flex justify-between p-3 bg-blue-50 rounded-xl">
+                    <span className="text-blue-800 font-medium">Loyalty Points</span>
+                    <span className="text-blue-900 font-bold">{currentUser?.points || 0} pts</span>
+                  </div>
+                </div>
+                <Button 
+                  variant="outline" 
+                  className="w-full mt-6 border-red-200 text-red-600 hover:bg-red-50"
+                  onClick={() => {
+                    logout();
+                  }}
+                >
+                  Sign Out
+                </Button>
+              </CardContent>
+            </Card>
+
+            <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-4">Past Orders</h2>
             {pastOrders.map(order => (
               <Card key={order.id}>
                 <CardContent className="p-5 flex justify-between items-center">
@@ -126,7 +158,7 @@ export function CustomerScreen() {
                      <p className="text-xs text-gray-500">{format(new Date(order.createdAt), 'MMM d, yyyy')}</p>
                    </div>
                    <div className="text-right">
-                     <p className="font-semibold text-sm">${order.totalCost.toFixed(2)}</p>
+                     <p className="font-semibold text-sm">₱{order.totalCost.toFixed(2)}</p>
                      <StatusBadge status={order.status} />
                    </div>
                 </CardContent>
@@ -162,7 +194,7 @@ function ScheduleForm({ onComplete }: { onComplete: () => void }) {
       pickupTime: new Date(Date.now() + 86400000).toISOString(),
       services: [service],
       paymentMethod: payment,
-      totalCost: service === 'Dry Cleaning' ? 35 : 15,
+      totalCost: service === 'Dry Cleaning' ? 350 : (service === 'Wash and Fold' ? 150 : (service === 'Wash and Dry' ? 200 : 180)),
       isPaid: false,
     });
     alert('Pickup Scheduled! AI forecasting delivery time...');
@@ -198,7 +230,7 @@ function ScheduleForm({ onComplete }: { onComplete: () => void }) {
         <div className="bg-blue-50 p-4 rounded-lg mt-6">
           <div className="flex justify-between font-medium text-blue-900">
             <span>Estimated Cost</span>
-            <span>${service === 'Dry Cleaning' ? '35.00' : '15.00'}</span>
+            <span>₱{service === 'Dry Cleaning' ? '350.00' : (service === 'Wash and Fold' ? '150.00' : (service === 'Wash and Dry' ? '200.00' : '180.00'))}</span>
           </div>
           <p className="text-xs text-blue-700 mt-1">Smart Pickup slot assigned: Tomorrow at 9:00 AM</p>
         </div>

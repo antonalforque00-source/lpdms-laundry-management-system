@@ -40,7 +40,7 @@ export function RiderScreen() {
           </div>
           <div className="bg-green-50 border border-green-100 rounded-2xl p-4 flex-1">
             <p className="text-xs text-green-600 uppercase font-bold tracking-wider">Earnings</p>
-            <p className="text-3xl font-bold text-green-700 mt-1">$45</p>
+            <p className="text-3xl font-bold text-green-700 mt-1">₱450</p>
           </div>
         </div>
       </div>

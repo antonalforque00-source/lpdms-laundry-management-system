@@ -2,14 +2,15 @@ import React, { useState } from 'react';
 import { useAppContext } from '../store/AppContext';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { Droplets } from 'lucide-react';
+import { Droplets, Smartphone } from 'lucide-react';
 import { motion } from 'motion/react';
+import QRCode from 'react-qr-code';
 
 export function LoginScreen() {
   const { login, register } = useAppContext();
   const [isRegistering, setIsRegistering] = useState(false);
-  const [email, setEmail] = useState('customer@test.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [role, setRole] = useState<'customer' | 'rider' | 'staff' | 'admin'>('customer');
   const [isLoading, setIsLoading] = useState(false);
@@ -33,7 +34,7 @@ export function LoginScreen() {
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-6 bg-[#F0F4F8]">
+    <div className="flex-1 flex flex-col items-center justify-center p-6 bg-transparent">
       <motion.div 
         initial={{ scale: 0.9, opacity: 0 }} 
         animate={{ scale: 1, opacity: 1 }}
@@ -109,26 +110,14 @@ export function LoginScreen() {
           </div>
         </form>
 
-        {!isRegistering && (
-          <div className="text-xs text-gray-400 text-center space-y-1 mt-6">
-            <p className="uppercase font-bold tracking-wider">Demo Accounts:</p>
-            <div className="flex flex-wrap justify-center gap-2 mt-2">
-              {['customer', 'rider', 'staff', 'admin'].map(role => (
-                <button 
-                  key={role} 
-                  type="button"
-                  onClick={() => {
-                    setEmail(`${role}@test.com`);
-                    setPassword('password123');
-                  }}
-                  className="px-3 py-1.5 bg-gray-100 font-bold text-gray-600 rounded-xl hover:bg-gray-200 hover:text-gray-900 transition-colors capitalize"
-                >
-                  {role}
-                </button>
-              ))}
-            </div>
+        <div className="hidden sm:flex flex-col items-center mt-12 opacity-50 hover:opacity-100 transition-opacity">
+          <div className="bg-white p-2 rounded-xl shadow-sm mb-3">
+            <QRCode value={typeof window !== 'undefined' ? window.location.href : 'https://ais-dev-vvasvr54odt6errmbdysl2-609173610732.asia-southeast1.run.app/'} size={80} level="L" />
           </div>
-        )}
+          <p className="text-[10px] uppercase font-bold tracking-widest text-gray-500 flex items-center gap-1.5 bg-white/50 px-3 py-1.5 rounded-full">
+            <Smartphone size={12} /> Scan to view on mobile
+          </p>
+        </div>
       </motion.div>
     </div>
   );
