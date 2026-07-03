@@ -1,0 +1,11 @@
+{
+  "name": "LPDMS",
+  "description": "Laundry Pickup and Delivery Management System",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
